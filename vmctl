@@ -1,0 +1,40 @@
+#!/bin/sh
+set -eu
+
+resolve_self_dir() {
+    script=$1
+    case "$script" in
+        /*) ;;
+        *) script=$PWD/$script ;;
+    esac
+    while [ -L "$script" ]; do
+        link=$(readlink "$script")
+        case "$link" in
+            /*) script=$link ;;
+            *) script=$(dirname "$script")/$link ;;
+        esac
+    done
+    CDPATH= cd -- "$(dirname "$script")" && pwd -P
+}
+
+VMCTL_ROOT=$(resolve_self_dir "$0")
+export VMCTL_ROOT
+
+# A release archive contains a static BusyBox. Re-exec once so all shell
+# utilities used below come from the archive rather than the host.
+if [ "${VMCTL_BUSYBOX_REEXEC:-0}" != 1 ] &&
+   [ -x "${VMCTL_RUNTIME_DIR:-$VMCTL_ROOT/runtime}/bin/busybox" ]; then
+    VMCTL_BUSYBOX_REEXEC=1
+    export VMCTL_BUSYBOX_REEXEC
+    exec "${VMCTL_RUNTIME_DIR:-$VMCTL_ROOT/runtime}/bin/busybox" sh "$0" "$@"
+fi
+
+RUNTIME_DIR=${VMCTL_RUNTIME_DIR:-$VMCTL_ROOT/runtime}
+if [ -d "$RUNTIME_DIR/bin" ]; then
+    PATH=$RUNTIME_DIR/bin:$PATH
+    export PATH
+fi
+
+# shellcheck source=lib/vmctl.sh
+. "$VMCTL_ROOT/lib/vmctl.sh"
+vmctl_main "$@"

@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+while IFS= read -r line; do
+    [ -z "${VMCTL_QMP_LOG:-}" ] || printf '%s\n' "$line" >> "$VMCTL_QMP_LOG"
+    case "$line" in
+        *'"id":"vmctl-capabilities"'*) printf '%s\n' '{"return":{},"id":"vmctl-capabilities"}' ;;
+        *'"id":"vmctl-command"'*)
+            # Include unrelated messages to exercise response correlation.
+            printf '%s\n' '{"event":"BALLOON_CHANGE","data":{"actual":123}}'
+            if [ "${VMCTL_QMP_NO_REPLY:-0}" = 1 ]; then continue; fi
+            if [ "${VMCTL_QMP_FAIL:-0}" = 1 ] ||
+                { [ -n "${VMCTL_QMP_FAIL_MATCH:-}" ] && printf '%s' "$line" | grep -q "$VMCTL_QMP_FAIL_MATCH"; }; then
+                printf '%s\n' '{"error":{"class":"GenericError","desc":"injected failure"},"id":"vmctl-command"}'
+            else
+                printf '%s\n' '{"return":{},"id":"vmctl-command"}'
+            fi
+            ;;
+    esac
+done

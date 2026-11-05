@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+[ -z "${VMCTL_QEMU_LOG:-}" ] || printf '%s\n' "$@" > "$VMCTL_QEMU_LOG"
+pidfile=
+qmp=
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --version) printf 'QEMU emulator version 11.0.3 (fake)\n'; exit 0 ;;
+        -pidfile) pidfile=$2; shift 2 ;;
+        -qmp) qmp=${2#unix:}; qmp=${qmp%%,*}; shift 2 ;;
+        *) shift ;;
+    esac
+done
+[ -n "$pidfile" ]
+sleep 600 &
+printf '%s\n' "$!" > "$pidfile"
+[ -z "$qmp" ] || : > "$qmp"

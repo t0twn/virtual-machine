@@ -1,0 +1,4 @@
+#!/bin/sh
+# The fake accepts both readiness probes and scripts on stdin.
+while IFS= read -r _line; do :; done
+exit 0

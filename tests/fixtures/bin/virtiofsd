@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+socket=
+for argument in "$@"; do
+    case "$argument" in
+        --version) printf 'virtiofsd 1.13.2 (fake)\n'; exit 0 ;;
+    esac
+done
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --socket-path) socket=$2; shift 2 ;;
+        *) shift ;;
+    esac
+done
+[ -n "$socket" ]
+: > "$socket"
+while :; do sleep 60; done

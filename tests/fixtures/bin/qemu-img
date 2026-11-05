@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+command=${1:-}
+shift || true
+case "$command" in
+    create)
+        output=
+        for argument in "$@"; do output=$argument; done
+        : > "$output"
+        ;;
+    resize)
+        [ -z "${VMCTL_IMG_LOG:-}" ] || printf '%s\n' "$*" >> "$VMCTL_IMG_LOG"
+        [ "${VMCTL_IMG_FAIL:-0}" != 1 ] || exit 1
+        ;;
+    *) printf 'fake qemu-img: unsupported command %s\n' "$command" >&2; exit 1 ;;
+esac
